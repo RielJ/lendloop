@@ -1,10 +1,8 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
 
-const isProtectedRoute = createRouteMatcher(["/dashboard(.*)"]);
-
-export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) await auth.protect();
-});
+// Clerk needs its middleware to read sessions. Auth checks live at each resource
+// (app/dashboard/layout.tsx for UX, Convex functions as the authority).
+export default clerkMiddleware();
 
 export const config = {
   matcher: [
