@@ -2,6 +2,7 @@ import type { FunctionReturnType } from "convex/server";
 import { Badge } from "@/components/ui/badge";
 import type { api } from "@/convex/_generated/api";
 import { isOverdue, todayUtc } from "@/convex/lib/rules";
+import { timeAgo } from "@/lib/time";
 
 export type LoanView = FunctionReturnType<typeof api.loans.mine>[number];
 
@@ -63,10 +64,9 @@ function ActivityLine({ activity }: { activity: NonNullable<LoanView["activity"]
   return (
     <p
       className={`truncate text-xs ${failed ? "text-destructive" : "text-muted-foreground"}`}
-      title={activity.detail}
+      title={`${activity.detail} · ${new Date(activity.at).toLocaleString()}`}
     >
-      {KIND_LABEL[activity.kind]} {failed ? "failed" : "sent"} ·{" "}
-      {new Date(activity.at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+      {KIND_LABEL[activity.kind]} {failed ? "failed" : "sent"} {timeAgo(activity.at)}
     </p>
   );
 }
