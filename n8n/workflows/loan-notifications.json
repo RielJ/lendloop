@@ -1,0 +1,220 @@
+{
+  "id": "LendLoopNotify01",
+  "name": "LendLoop: loan notifications",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lendloop/loan-events",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "loan-event",
+      "name": "Loan event",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "lendloop-loan-events"
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\n// Convex signs `${timestamp}.${rawBody}` with the shared secret (convex/lib/hmac.ts).\n// Verify the raw bytes: re-serialising the parsed body could change them.\nconst item = $input.first();\nconst headers = item.json.headers ?? {};\nconst timestamp = String(headers['x-lendloop-timestamp'] ?? '');\nconst signature = String(headers['x-lendloop-signature'] ?? '');\nconst raw = (await this.helpers.getBinaryDataBuffer(0, 'data')).toString('utf8');\nconst secret = $env.LENDLOOP_WEBHOOK_SECRET;\n\nconst expected = 'sha256=' + crypto.createHmac('sha256', secret ?? '').update(`${timestamp}.${raw}`).digest('hex');\nconst fresh = Math.abs(Date.now() / 1000 - Number(timestamp)) <= 300;\nconst a = Buffer.from(signature);\nconst b = Buffer.from(expected);\nconst valid = Boolean(secret) && fresh && a.length === b.length && crypto.timingSafeEqual(a, b);\n\n// Pass on only the parsed event, never the headers or the raw body.\nreturn [{ json: { valid, event: valid ? JSON.parse(raw) : null } }];\n"
+      },
+      "id": "verify-signature",
+      "name": "Verify signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "valid",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "signed?",
+      "name": "Signed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// One short message per loan event. The payload holds only what this needs.\nconst e = $input.first().json.event;\nconst dates = `${e.startDate} to ${e.endDate}`;\nconst messages = {\n  requested: [`${e.otherPartyName} wants to borrow your ${e.toolName}`,\n    `${e.otherPartyName} asked to borrow your ${e.toolName} (${dates}). Open LendLoop to approve or decline.`],\n  approved: [`Approved: ${e.toolName}`,\n    `${e.otherPartyName} approved your request for the ${e.toolName} (${dates}).`],\n  declined: [`Declined: ${e.toolName}`,\n    `${e.otherPartyName} declined your request for the ${e.toolName} (${dates}).`],\n  returned: [`Returned: ${e.toolName}`,\n    `${e.otherPartyName} marked the ${e.toolName} as returned. Thanks for borrowing!`],\n};\nconst [subject, body] = messages[e.event] ?? [`LendLoop update: ${e.toolName}`, `Your loan is now ${e.status}.`];\nreturn [{\n  json: {\n    key: e.key,\n    to: `${e.recipient.name} <${e.recipient.email}>`,\n    subject,\n    text: `Hi ${e.recipient.name},\\n\\n${body}\\n\\n— LendLoop`,\n  },\n}];\n"
+      },
+      "id": "compose-message",
+      "name": "Compose message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "LendLoop <noreply@lendloop.local>",
+        "toEmail": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailFormat": "text",
+        "text": "={{ $json.text }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "send-email",
+      "name": "Send email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        880,
+        -100
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "LendLoopMailpit1",
+          "name": "Mailpit SMTP (local)"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, key: $('Compose message').item.json.key } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "accepted",
+      "name": "Accepted",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1100,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{ \"error\": \"Invalid signature\" }",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "id": "reject",
+      "name": "Reject",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        660,
+        100
+      ]
+    }
+  ],
+  "connections": {
+    "Loan event": {
+      "main": [
+        [
+          {
+            "node": "Verify signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify signature": {
+      "main": [
+        [
+          {
+            "node": "Signed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Signed?": {
+      "main": [
+        [
+          {
+            "node": "Compose message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reject",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose message": {
+      "main": [
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send email": {
+      "main": [
+        [
+          {
+            "node": "Accepted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "LendLoopErrors01",
+    "saveDataSuccessExecution": "none"
+  },
+  "pinData": {},
+  "tags": []
+}

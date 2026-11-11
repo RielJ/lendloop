@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -42,9 +43,6 @@ next-env.d.ts
 
 # clerk configuration (can include secrets)
 /.clerk/
-
-# n8n local secrets
-/n8n/.env
 
 # local Convex backend state
 /.convex/
