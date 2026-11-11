@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "convex/react";
+import { AdminPanel } from "@/components/dashboard/AdminPanel";
 import { AllTools } from "@/components/dashboard/AllTools";
 import { Incoming } from "@/components/dashboard/Incoming";
 import { MyListings } from "@/components/dashboard/MyListings";
@@ -23,6 +24,7 @@ export function Dashboard() {
           <TabsTrigger value="mine">My listings</TabsTrigger>
           <TabsTrigger value="requests">My requests</TabsTrigger>
           <TabsTrigger value="incoming">Incoming</TabsTrigger>
+          {me.role === "admin" && <TabsTrigger value="admin">Admin</TabsTrigger>}
         </TabsList>
         <TabsContent value="all" className="pt-4">
           <AllTools />
@@ -36,6 +38,11 @@ export function Dashboard() {
         <TabsContent value="incoming" className="pt-4">
           <Incoming />
         </TabsContent>
+        {me.role === "admin" && (
+          <TabsContent value="admin" className="pt-4">
+            <AdminPanel />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

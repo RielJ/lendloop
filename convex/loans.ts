@@ -1,18 +1,21 @@
 import { ConvexError, v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
-import { requireUser } from "./lib/auth";
+import { requireAdmin, requireUser } from "./lib/auth";
 import {
   canDecide,
   canMarkReturned,
   canRequestTool,
-  isOverdue,
   todayUtc,
   validateLoanDates,
 } from "./lib/rules";
 import { vLoanStatus } from "./schema";
 
-/** A loan as one party sees it: the other party's display name only, no email. */
+/**
+ * A loan as one party sees it: the other party's display name only, no email.
+ * Overdue is derived in the UI from endDate: Convex caches query results, so a
+ * Date.now()-based flag computed here would go stale when the date changes.
+ */
 const vLoanView = v.object({
   _id: v.id("loans"),
   _creationTime: v.number(),
@@ -21,7 +24,6 @@ const vLoanView = v.object({
   startDate: v.string(),
   endDate: v.string(),
   status: vLoanStatus,
-  overdue: v.boolean(),
   otherParty: v.string(),
 });
 
@@ -35,7 +37,6 @@ async function toView(ctx: QueryCtx, loan: Doc<"loans">, side: "owner" | "borrow
     startDate: loan.startDate,
     endDate: loan.endDate,
     status: loan.status,
-    overdue: isOverdue(loan, todayUtc()),
     otherParty: other?.name ?? "Former neighbor",
   };
 }
@@ -165,5 +166,44 @@ export const incoming = query({
       .order("desc")
       .take(100);
     return await Promise.all(loans.map((loan) => toView(ctx, loan, "owner")));
+  },
+});
+
+/** Admin only: every loan with both parties' names, newest first. */
+export const all = query({
+  args: {},
+  returns: v.array(
+    v.object({
+      _id: v.id("loans"),
+      _creationTime: v.number(),
+      toolName: v.string(),
+      owner: v.string(),
+      borrower: v.string(),
+      startDate: v.string(),
+      endDate: v.string(),
+      status: vLoanStatus,
+    }),
+  ),
+  handler: async (ctx) => {
+    await requireAdmin(ctx);
+    const loans = await ctx.db.query("loans").order("desc").take(200);
+    return await Promise.all(
+      loans.map(async (loan) => {
+        const [owner, borrower] = await Promise.all([
+          ctx.db.get("users", loan.ownerId),
+          ctx.db.get("users", loan.borrowerId),
+        ]);
+        return {
+          _id: loan._id,
+          _creationTime: loan._creationTime,
+          toolName: loan.toolName,
+          owner: owner?.name ?? "Former neighbor",
+          borrower: borrower?.name ?? "Former neighbor",
+          startDate: loan.startDate,
+          endDate: loan.endDate,
+          status: loan.status,
+        };
+      }),
+    );
   },
 });

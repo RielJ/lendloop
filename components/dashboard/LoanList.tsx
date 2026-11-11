@@ -1,6 +1,7 @@
 import type { FunctionReturnType } from "convex/server";
 import { Badge } from "@/components/ui/badge";
 import type { api } from "@/convex/_generated/api";
+import { isOverdue, todayUtc } from "@/convex/lib/rules";
 
 export type LoanView = FunctionReturnType<typeof api.loans.mine>[number];
 
@@ -25,6 +26,7 @@ export function LoanList({
 }) {
   if (loans === undefined) return <p className="text-muted-foreground">Loading…</p>;
   if (loans.length === 0) return <p className="text-muted-foreground">{empty}</p>;
+  const today = todayUtc();
 
   return (
     <ul className="divide-y rounded-lg border">
@@ -37,7 +39,7 @@ export function LoanList({
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {loan.overdue ? (
+            {isOverdue(loan, today) ? (
               <Badge variant="destructive">Overdue</Badge>
             ) : (
               <Badge variant={loan.status === "pending" ? "secondary" : "outline"}>
