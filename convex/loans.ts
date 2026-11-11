@@ -1,6 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
+import { latestActivity, vActivity } from "./automation";
 import { requireAdmin, requireUser } from "./lib/auth";
 import {
   canDecide,
@@ -9,6 +10,7 @@ import {
   todayUtc,
   validateLoanDates,
 } from "./lib/rules";
+import { notifyLoan } from "./notify";
 import { vLoanStatus } from "./schema";
 
 /**
@@ -25,6 +27,7 @@ const vLoanView = v.object({
   endDate: v.string(),
   status: vLoanStatus,
   otherParty: v.string(),
+  activity: vActivity,
 });
 
 async function toView(ctx: QueryCtx, loan: Doc<"loans">, side: "owner" | "borrower") {
@@ -38,6 +41,7 @@ async function toView(ctx: QueryCtx, loan: Doc<"loans">, side: "owner" | "borrow
     endDate: loan.endDate,
     status: loan.status,
     otherParty: other?.name ?? "Former neighbor",
+    activity: await latestActivity(ctx, loan._id),
   };
 }
 
@@ -70,7 +74,7 @@ export const request = mutation({
       throw new ConvexError("You already have a pending request for this tool");
     }
 
-    return await ctx.db.insert("loans", {
+    const loanId = await ctx.db.insert("loans", {
       toolId,
       toolName: tool.name,
       ownerId: tool.ownerId,
@@ -79,6 +83,8 @@ export const request = mutation({
       endDate,
       status: "pending",
     });
+    await notifyLoan(ctx, loanId, "requested");
+    return loanId;
   },
 });
 
@@ -102,7 +108,11 @@ export const approve = mutation({
       .query("loans")
       .withIndex("by_toolId_and_status", (q) => q.eq("toolId", tool._id).eq("status", "pending"))
       .take(100);
-    for (const other of others) await ctx.db.patch("loans", other._id, { status: "declined" });
+    for (const other of others) {
+      await ctx.db.patch("loans", other._id, { status: "declined" });
+      await notifyLoan(ctx, other._id, "declined");
+    }
+    await notifyLoan(ctx, loanId, "approved");
     return null;
   },
 });
@@ -116,6 +126,7 @@ export const decline = mutation({
     if (!canDecide(user, loan))
       throw new ConvexError("Only the owner can decline a pending request");
     await ctx.db.patch("loans", loanId, { status: "declined" });
+    await notifyLoan(ctx, loanId, "declined");
     return null;
   },
 });
@@ -135,6 +146,7 @@ export const markReturned = mutation({
     if (tool?.activeLoanId === loanId) {
       await ctx.db.patch("tools", tool._id, { activeLoanId: undefined });
     }
+    await notifyLoan(ctx, loanId, "returned");
     return null;
   },
 });

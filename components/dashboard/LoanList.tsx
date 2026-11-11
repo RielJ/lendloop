@@ -37,6 +37,7 @@ export function LoanList({
             <p className="text-sm text-muted-foreground">
               {partyLabel} {loan.otherParty} · {loan.startDate} to {loan.endDate}
             </p>
+            {loan.activity && <ActivityLine activity={loan.activity} />}
           </div>
           <div className="flex items-center gap-2">
             {isOverdue(loan, today) ? (
@@ -51,5 +52,21 @@ export function LoanList({
         </li>
       ))}
     </ul>
+  );
+}
+
+const KIND_LABEL = { notification: "Notification", reminder: "Reminder" } as const;
+
+/** Last automation outcome for the loan, so a failed n8n delivery is visible. */
+function ActivityLine({ activity }: { activity: NonNullable<LoanView["activity"]> }) {
+  const failed = activity.status === "failed";
+  return (
+    <p
+      className={`truncate text-xs ${failed ? "text-destructive" : "text-muted-foreground"}`}
+      title={activity.detail}
+    >
+      {KIND_LABEL[activity.kind]} {failed ? "failed" : "sent"} ·{" "}
+      {new Date(activity.at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+    </p>
   );
 }

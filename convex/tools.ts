@@ -3,6 +3,7 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query, type QueryCtx } from "./_generated/server";
 import { requireUser } from "./lib/auth";
 import { canEditTool, canRemoveTool, validateToolInput } from "./lib/rules";
+import { notifyLoan } from "./notify";
 import { vCategory, vCondition } from "./schema";
 
 /**
@@ -152,7 +153,10 @@ export const remove = mutation({
       .query("loans")
       .withIndex("by_toolId_and_status", (q) => q.eq("toolId", toolId).eq("status", "pending"))
       .take(100);
-    for (const loan of pending) await ctx.db.patch("loans", loan._id, { status: "declined" });
+    for (const loan of pending) {
+      await ctx.db.patch("loans", loan._id, { status: "declined" });
+      await notifyLoan(ctx, loan._id, "declined");
+    }
     await ctx.db.delete("tools", toolId);
     return null;
   },
