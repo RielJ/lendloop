@@ -21,8 +21,11 @@ common commands.
 
 ## Run it locally
 
-You need Node 26 (see `.node-version`), Bun 1.4, Docker, [`just`](https://github.com/casey/just) and `jq`, plus a free
-Clerk account.
+**New to the stack? Follow [SETUP.md](SETUP.md).** It walks through every step, including the Clerk dashboard, the
+first-run prompts, and what each command prints. The short version:
+
+You need Node 26 (see `.node-version`), Bun 1.4, Docker Desktop, [`just`](https://github.com/casey/just) and `jq`,
+plus a free Clerk account.
 
 1. Install dependencies and create the env file:
 
@@ -31,40 +34,36 @@ Clerk account.
    cp .env.example .env.local
    ```
 
-2. In the [Clerk dashboard](https://dashboard.clerk.com), create an application. Copy the publishable and secret keys
-   into `.env.local`. Then activate the Convex integration (**Integrations → Convex**) and copy the **Frontend API
-   URL** it shows.
+2. In the [Clerk dashboard](https://dashboard.clerk.com), create an application and copy its two API keys into
+   `.env.local`. Then [activate the Convex integration](https://dashboard.clerk.com/apps/setup/convex) and copy the
+   **Frontend API URL** it shows.
 
-3. Start Convex once to create a deployment. Choose a **local** deployment when asked: the n8n setup below expects
-   Convex on `localhost`. This fills the `CONVEX_*` values in `.env.local`. Stop it with Ctrl+C when it is ready.
+3. In terminal 1, start Convex and Next.js. On the first run, choose **Start without an account (run Convex
+   locally)**: the n8n setup expects Convex on `localhost`. The first push stops with "Environment variable
+   CLERK_JWT_ISSUER_DOMAIN ... was not set". That is expected; leave it running.
 
    ```sh
-   bunx convex dev
+   just dev
    ```
 
-4. Give Convex the Clerk issuer and the admin allowlist:
+4. In terminal 2, set the Clerk issuer and the admin allowlist. Terminal 1 picks them up by itself and starts the app
+   at <http://localhost:3000>.
 
    ```sh
    bunx convex env set CLERK_JWT_ISSUER_DOMAIN https://<your-app>.clerk.accounts.dev
    bunx convex env set ADMIN_EMAILS you@example.com
    ```
 
-5. Start the app (Next.js and Convex together) at <http://localhost:3000>:
-
-   ```sh
-   just dev
-   ```
-
-6. In a second terminal, start n8n and Mailpit. This creates `n8n/.env`, generates the shared HMAC secret if needed,
-   sets `LENDLOOP_WEBHOOK_SECRET` and `N8N_WEBHOOK_URL` on the Convex deployment, and then imports and publishes the
-   three workflows:
+5. With `just dev` still running, start n8n and Mailpit. This creates `n8n/.env`, generates the shared HMAC secret,
+   sets `LENDLOOP_WEBHOOK_SECRET` and `N8N_WEBHOOK_URL` on the Convex deployment, and imports and publishes the three
+   workflows:
 
    ```sh
    just n8n-up
    ```
 
-7. Optional: load demo data. It adds three neighbors with `@example.com` addresses, five tools, a pending request, an
-   overdue loan and a returned loan. You can run it again safely; it does not create duplicates.
+6. Optional: load demo data. It adds three neighbors with `@example.com` addresses, five tools, a pending request, an
+   overdue loan and a returned loan. Running it again changes nothing.
 
    ```sh
    just seed
