@@ -1,4 +1,5 @@
-import { SignInButton } from "@clerk/nextjs";
+import { Show, SignInButton } from "@clerk/nextjs";
+import Link from "next/link";
 import { PublicToolList } from "@/components/PublicToolList";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
@@ -17,9 +18,16 @@ export default function Home() {
             year, borrow the ladder you need once.
           </p>
           <div className="mt-6">
-            <SignInButton mode="modal">
-              <Button size="lg">Sign in to lend or borrow</Button>
-            </SignInButton>
+            <Show when="signed-out">
+              <SignInButton mode="modal">
+                <Button size="lg">Sign in to lend or borrow</Button>
+              </SignInButton>
+            </Show>
+            <Show when="signed-in">
+              <Button size="lg" nativeButton={false} render={<Link href="/dashboard" />}>
+                Go to your dashboard
+              </Button>
+            </Show>
           </div>
         </section>
         <section>

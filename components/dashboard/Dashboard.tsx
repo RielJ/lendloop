@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useConvexAuth, useQuery } from "convex/react";
 import { AdminPanel } from "@/components/dashboard/AdminPanel";
 import { AllTools } from "@/components/dashboard/AllTools";
 import { Incoming } from "@/components/dashboard/Incoming";
@@ -11,6 +11,18 @@ import { api } from "@/convex/_generated/api";
 
 export function Dashboard() {
   const me = useQuery(api.users.me);
+  const { isLoading, isAuthenticated } = useConvexAuth();
+
+  // Clerk signed the user in, but Convex rejected or never got the token.
+  if (!isLoading && !isAuthenticated) {
+    return (
+      <p className="text-muted-foreground">
+        You&apos;re signed in, but LendLoop couldn&apos;t verify your session. Check that the Convex
+        integration is active in Clerk and that CLERK_JWT_ISSUER_DOMAIN matches your Clerk app (see
+        SETUP.md, Troubleshooting).
+      </p>
+    );
+  }
 
   // EnsureUser creates the row right after sign-in; until then `me` is null.
   if (!me) return <p className="text-muted-foreground">Loading your account…</p>;

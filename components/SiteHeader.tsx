@@ -1,10 +1,11 @@
 "use client";
 
-import { SignInButton, UserButton } from "@clerk/nextjs";
-import { Authenticated, Unauthenticated } from "convex/react";
+import { Show, SignInButton, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
+// Sign-in controls follow Clerk's session, not Convex's: if Convex can't get a token,
+// the user must still see the avatar menu to sign out.
 export function SiteHeader() {
   return (
     <header className="border-b">
@@ -12,19 +13,19 @@ export function SiteHeader() {
         <Link href="/" className="font-semibold tracking-tight">
           LendLoop
         </Link>
-        <Unauthenticated>
+        <Show when="signed-out">
           <SignInButton mode="modal">
             <Button variant="outline">Sign in</Button>
           </SignInButton>
-        </Unauthenticated>
-        <Authenticated>
+        </Show>
+        <Show when="signed-in">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" render={<Link href="/dashboard" />}>
+            <Button variant="ghost" nativeButton={false} render={<Link href="/dashboard" />}>
               Dashboard
             </Button>
             <UserButton />
           </div>
-        </Authenticated>
+        </Show>
       </div>
     </header>
   );
