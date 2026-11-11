@@ -1,0 +1,35 @@
+{
+  "name": "lendloop",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "convex dev --start 'next dev'",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p convex",
+    "build": "bun run typecheck && next build",
+    "start": "next start",
+    "lint": "oxlint",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check",
+    "test": "bun test ./tests"
+  },
+  "dependencies": {
+    "@clerk/clerk-react": "^5.61.3",
+    "@clerk/nextjs": "^6.39.6",
+    "convex": "^1.49.0",
+    "next": "^16.3.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/bun": "1.4.4",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "oxfmt": "0.78.0",
+    "oxlint": "1.93.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^6.0.3"
+  }
+}
