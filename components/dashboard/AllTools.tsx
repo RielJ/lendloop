@@ -2,6 +2,7 @@
 
 import { useQuery } from "convex/react";
 import { useState } from "react";
+import { RequestDialog } from "@/components/dashboard/RequestDialog";
 import { ToolCard } from "@/components/dashboard/ToolCard";
 import {
   Select,
@@ -50,7 +51,11 @@ export function AllTools() {
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {tools.map((tool) => (
-            <ToolCard key={tool._id} tool={tool} />
+            <ToolCard
+              key={tool._id}
+              tool={tool}
+              actions={!tool.isMine && tool.available ? <RequestDialog tool={tool} /> : undefined}
+            />
           ))}
         </ul>
       )}

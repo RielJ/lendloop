@@ -12,6 +12,7 @@ import type * as lib_auth from "../lib/auth.js";
 import type * as lib_constants from "../lib/constants.js";
 import type * as lib_hmac from "../lib/hmac.js";
 import type * as lib_rules from "../lib/rules.js";
+import type * as loans from "../loans.js";
 import type * as tools from "../tools.js";
 import type * as users from "../users.js";
 
@@ -26,6 +27,7 @@ declare const fullApi: ApiFromModules<{
   "lib/constants": typeof lib_constants;
   "lib/hmac": typeof lib_hmac;
   "lib/rules": typeof lib_rules;
+  loans: typeof loans;
   tools: typeof tools;
   users: typeof users;
 }>;
