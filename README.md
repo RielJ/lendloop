@@ -36,7 +36,9 @@ plus a free Clerk account.
 
 2. In the [Clerk dashboard](https://dashboard.clerk.com), create an application and copy its two API keys into
    `.env.local`. Then [activate the Convex integration](https://dashboard.clerk.com/apps/setup/convex) and copy the
-   **Frontend API URL** it shows.
+   **Frontend API URL** it shows. On the [Sessions](https://dashboard.clerk.com/~/sessions) page, add
+   `"email": "{{user.primary_email_address}}"` and `"name": "{{user.full_name}}"` to the session token claims next to
+   `"aud": "convex"`. Without the email claim, sign-in stops with an error that says so.
 
 3. In terminal 1, start Convex and Next.js. On the first run, choose **Start without an account (run Convex
    locally)**: the n8n setup expects Convex on `localhost`. The first push stops with "Environment variable

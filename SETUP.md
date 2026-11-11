@@ -87,13 +87,38 @@ The `pk_test_` key is public; the browser uses it. The `sk_test_` key is a secre
 3. The page now shows a **Frontend API URL** like `https://verb-noun-12.clerk.accounts.dev`. Copy it; you need it in
    Step 5.
 
-This creates a token template named `convex` in Clerk. The app asks Clerk for a token from that template and sends it
-to Convex. If you skip this step, sign-in seems to work, but the browser console shows `404` errors for
-`/tokens/convex` and the dashboard never loads your data.
+This adds the audience claim `aud: "convex"` to your Clerk session token, so Convex accepts it. If you skip this step,
+sign-in seems to work, but the browser console shows `404` errors for `/tokens/convex` and the dashboard never loads
+your data.
+
+Clerk's docs call this URL `CLERK_FRONTEND_API_URL`. Convex's docs, and this app, call it `CLERK_JWT_ISSUER_DOMAIN`. It
+is the same value. You set it on Convex in Step 5, so you don't need to add it to `.env.local`.
+
+### 3.4 Add the email and name to the session token
+
+The integration only adds `aud`. LendLoop also needs your email (to check `ADMIN_EMAILS` and to address
+notifications) and your name.
+
+1. Open the **Sessions** page: <https://dashboard.clerk.com/~/sessions>.
+2. Under **Customize session token**, the **Claims** editor shows `"aud": "convex"`. Add `email` and `name` so it
+   reads:
+
+   ```json
+   {
+     "aud": "convex",
+     "email": "{{user.primary_email_address}}",
+     "name": "{{user.full_name}}"
+   }
+   ```
+
+3. Click **Save**.
+
+If you skip this step, LendLoop shows the error _"Your sign-in token has no email claim"_ after you sign in. After you
+fix it, sign out and sign in again so Clerk issues a new token.
 
 > **If you ran the app before adding Clerk keys:** Clerk may have created a temporary app for you without an account
 > (keyless mode). Its keys and a claim link are in `.clerk/.tmp/keyless.json`. You can open the `claimUrl` while logged
-> in to Clerk to move that app into your account, put its keys in `.env.local`, and continue with 3.3. Or ignore it and
+> in to Clerk to move that app into your account, put its keys in `.env.local`, and continue with 3.3 and 3.4. Or ignore it and
 > use the app you created in 3.1.
 
 ## Step 4: Start Convex and the app (Terminal 1)
@@ -273,6 +298,7 @@ editor. To keep your edits, run `just n8n-export` first. It saves them into `n8n
 | Browser console: `404` on `/tokens/convex`                          | The Convex integration in Clerk is off. Do Step 3.3.                                                                                                                                                                                            |
 | `Environment variable CLERK_JWT_ISSUER_DOMAIN ... was not set`      | Do Step 5.                                                                                                                                                                                                                                      |
 | Signed in, but the dashboard stays empty or says you are signed out | `CLERK_JWT_ISSUER_DOMAIN` doesn't match your Clerk app. Compare it with the Frontend API URL in Step 3.3, then set it again.                                                                                                                    |
+| Error: "Your sign-in token has no email claim"                      | Do Step 3.4, then sign out and sign in again.                                                                                                                                                                                                   |
 | No **Admin** tab                                                    | Your email isn't in `ADMIN_EMAILS`. See Step 6.                                                                                                                                                                                                 |
 | `just n8n-up` waits forever                                         | Docker Desktop isn't running, or n8n failed to start. Check with `docker compose logs n8n`.                                                                                                                                                     |
 | No email in Mailpit after an approval                               | Look at the line under the loan. If it says **failed**, hover over it for the reason. Then check n8n **Executions**, and run `bunx convex env list` to confirm `N8N_WEBHOOK_URL` is set. Running `just n8n-up` again fixes most setup problems. |

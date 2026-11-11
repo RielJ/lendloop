@@ -1,17 +1,9 @@
 import { ConvexError, v } from "convex/values";
 import { env, mutation, query } from "./_generated/server";
 import { getUser, requireAdmin } from "./lib/auth";
+import { profileFromIdentity } from "./lib/rules";
 
 const vRole = v.union(v.literal("admin"), v.literal("user"));
-
-function adminEmails(): Set<string> {
-  return new Set(
-    (env.ADMIN_EMAILS ?? "")
-      .split(",")
-      .map((email) => email.trim().toLowerCase())
-      .filter(Boolean),
-  );
-}
 
 /**
  * Create or refresh the caller's user row from their Clerk identity.
@@ -24,9 +16,9 @@ export const store = mutation({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new ConvexError("Please sign in");
 
-    const email = (identity.email ?? "").toLowerCase();
-    const name = identity.name ?? identity.nickname ?? email.split("@")[0] ?? "Neighbor";
-    const role = email && adminEmails().has(email) ? "admin" : "user";
+    const result = profileFromIdentity(identity, env.ADMIN_EMAILS);
+    if (!result.ok) throw new ConvexError(result.error);
+    const { name, email, role } = result.profile;
 
     const existing = await getUser(ctx);
     if (existing) {

@@ -7,6 +7,31 @@
 type Actor = { _id: string; role: "admin" | "user" };
 type LoanStatus = "pending" | "approved" | "declined" | "returned";
 
+type Profile = { email: string; name: string; role: "admin" | "user" };
+
+/**
+ * Profile for a signed-in identity. The role comes only from the server-side allowlist.
+ * A token without an email is rejected: the admin check and every notification need it,
+ * and Clerk's default session token doesn't include one unless the claim is added.
+ */
+export function profileFromIdentity(
+  identity: { email?: string; name?: string; nickname?: string },
+  adminEmails: string | undefined,
+): { ok: true; profile: Profile } | { ok: false; error: string } {
+  const email = (identity.email ?? "").trim().toLowerCase();
+  if (!email) {
+    return {
+      ok: false,
+      error:
+        "Your sign-in token has no email claim. In the Clerk dashboard, open Sessions and add " +
+        '"email": "{{user.primary_email_address}}" to the session token (see SETUP.md).',
+    };
+  }
+  const admins = (adminEmails ?? "").split(",").map((entry) => entry.trim().toLowerCase());
+  const name = identity.name || identity.nickname || email.split("@")[0] || "Neighbor";
+  return { ok: true, profile: { email, name, role: admins.includes(email) ? "admin" : "user" } };
+}
+
 export const isAdmin = (actor: Actor) => actor.role === "admin";
 
 /** Editing a listing is the owner's call only. Admins remove, they don't rewrite. */
