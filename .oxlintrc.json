@@ -4,7 +4,8 @@
   "categories": { "correctness": "error", "suspicious": "warn" },
   "rules": {
     "react/react-in-jsx-scope": "off",
-    "import/no-unassigned-import": ["warn", { "allow": ["**/*.css"] }]
+    "import/no-unassigned-import": ["warn", { "allow": ["**/*.css"] }],
+    "no-underscore-dangle": ["warn", { "allow": ["_id", "_creationTime"] }]
   },
   "ignorePatterns": ["convex/_generated/**", ".next/**", "n8n/workflows/**", "components/ui/**"]
 }
