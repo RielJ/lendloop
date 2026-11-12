@@ -1,6 +1,6 @@
 import { ConvexError } from "convex/values";
-import type { Doc } from "../_generated/dataModel";
-import type { MutationCtx, QueryCtx } from "../_generated/server";
+import type { Doc } from "@/convex/_generated/dataModel";
+import type { MutationCtx, QueryCtx } from "@/convex/_generated/server";
 
 /** The signed-in user's row, or null when signed out or not yet stored. */
 export async function getUser(ctx: QueryCtx | MutationCtx): Promise<Doc<"users"> | null> {

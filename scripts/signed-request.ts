@@ -7,7 +7,7 @@
  * Reads NEXT_PUBLIC_CONVEX_SITE_URL and LENDLOOP_WEBHOOK_SECRET from .env.local (Bun loads it).
  * Pass --unsigned to check that the endpoint rejects the request.
  */
-import { SIGNATURE_HEADER, TIMESTAMP_HEADER, sign } from "../convex/lib/hmac";
+import { SIGNATURE_HEADER, TIMESTAMP_HEADER, sign } from "@/convex/lib/hmac";
 
 const args = process.argv.slice(2);
 const unsigned = args.includes("--unsigned");

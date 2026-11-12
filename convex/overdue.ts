@@ -1,6 +1,6 @@
 import { v } from "convex/values";
-import { internalMutation, internalQuery } from "./_generated/server";
-import { daysBetween } from "./lib/rules";
+import { internalMutation, internalQuery } from "@/convex/_generated/server";
+import { daysBetween } from "@/convex/lib/rules";
 
 const vOverdueLoan = v.object({
   loanId: v.id("loans"),

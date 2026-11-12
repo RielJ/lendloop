@@ -1,17 +1,17 @@
 import { ConvexError, v } from "convex/values";
-import type { Doc } from "./_generated/dataModel";
-import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
-import { latestActivity, vActivity } from "./automation";
-import { requireAdmin, requireUser } from "./lib/auth";
+import type { Doc } from "@/convex/_generated/dataModel";
+import { mutation, query, type MutationCtx, type QueryCtx } from "@/convex/_generated/server";
+import { latestActivity, vActivity } from "@/convex/automation";
+import { requireAdmin, requireUser } from "@/convex/lib/auth";
 import {
   canDecide,
   canMarkReturned,
   canRequestTool,
   todayUtc,
   validateLoanDates,
-} from "./lib/rules";
-import { notifyLoan } from "./notify";
-import { vLoanStatus } from "./schema";
+} from "@/convex/lib/rules";
+import { notifyLoan } from "@/convex/notify";
+import { vLoanStatus } from "@/convex/schema";
 
 /**
  * A loan as one party sees it: the other party's display name only, no email.

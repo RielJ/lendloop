@@ -1,6 +1,6 @@
 import { v } from "convex/values";
-import type { Id } from "./_generated/dataModel";
-import { internalMutation, type QueryCtx } from "./_generated/server";
+import type { Id } from "@/convex/_generated/dataModel";
+import { internalMutation, type QueryCtx } from "@/convex/_generated/server";
 
 export const vEventKind = v.union(v.literal("notification"), v.literal("reminder"));
 export const vEventStatus = v.union(v.literal("sent"), v.literal("failed"));

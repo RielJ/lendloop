@@ -1,8 +1,8 @@
 import { httpRouter } from "convex/server";
-import { internal } from "./_generated/api";
-import { env, httpAction } from "./_generated/server";
-import { SIGNATURE_HEADER, TIMESTAMP_HEADER, verify } from "./lib/hmac";
-import { todayUtc } from "./lib/rules";
+import { internal } from "@/convex/_generated/api";
+import { env, httpAction } from "@/convex/_generated/server";
+import { SIGNATURE_HEADER, TIMESTAMP_HEADER, verify } from "@/convex/lib/hmac";
+import { todayUtc } from "@/convex/lib/rules";
 
 /**
  * Endpoints n8n calls. Every request must carry an HMAC signature over

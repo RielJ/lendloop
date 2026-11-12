@@ -1,11 +1,35 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript", "react", "nextjs", "import"],
-  "categories": { "correctness": "error", "suspicious": "warn" },
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
   "rules": {
     "react/react-in-jsx-scope": "off",
-    "import/no-unassigned-import": ["warn", { "allow": ["**/*.css"] }],
-    "no-underscore-dangle": ["warn", { "allow": ["_id", "_creationTime"] }]
+    "import/no-unassigned-import": [
+      "warn",
+      {
+        "allow": ["**/*.css"]
+      }
+    ],
+    "no-underscore-dangle": [
+      "warn",
+      {
+        "allow": ["_id", "_creationTime"]
+      }
+    ],
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["./**", "../**"],
+            "message": "Use the @/ alias (repo root), e.g. @/convex/lib/rules, not a relative path."
+          }
+        ]
+      }
+    ]
   },
   "ignorePatterns": ["convex/_generated/**", ".next/**", "n8n/workflows/**", "components/ui/**"]
 }

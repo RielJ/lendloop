@@ -1,8 +1,8 @@
 import { v } from "convex/values";
-import { internal } from "./_generated/api";
-import type { Id } from "./_generated/dataModel";
-import { env, internalAction, internalQuery, type MutationCtx } from "./_generated/server";
-import { SIGNATURE_HEADER, TIMESTAMP_HEADER, sign } from "./lib/hmac";
+import { internal } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
+import { env, internalAction, internalQuery, type MutationCtx } from "@/convex/_generated/server";
+import { SIGNATURE_HEADER, TIMESTAMP_HEADER, sign } from "@/convex/lib/hmac";
 
 export const vLoanEvent = v.union(
   v.literal("requested"),

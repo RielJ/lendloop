@@ -1,7 +1,7 @@
 import { ConvexError, v } from "convex/values";
-import { env, mutation, query } from "./_generated/server";
-import { getUser, requireAdmin } from "./lib/auth";
-import { profileFromIdentity } from "./lib/rules";
+import { env, mutation, query } from "@/convex/_generated/server";
+import { getUser, requireAdmin } from "@/convex/lib/auth";
+import { profileFromIdentity } from "@/convex/lib/rules";
 
 const vRole = v.union(v.literal("admin"), v.literal("user"));
 

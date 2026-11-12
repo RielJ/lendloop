@@ -1,7 +1,7 @@
 import { v } from "convex/values";
-import type { Id } from "./_generated/dataModel";
-import { internalMutation, type MutationCtx } from "./_generated/server";
-import { todayUtc } from "./lib/rules";
+import type { Id } from "@/convex/_generated/dataModel";
+import { internalMutation, type MutationCtx } from "@/convex/_generated/server";
+import { todayUtc } from "@/convex/lib/rules";
 
 /**
  * Demo data: three neighbors, five tools and one loan per state, including an

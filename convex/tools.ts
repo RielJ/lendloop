@@ -1,10 +1,10 @@
 import { ConvexError, v } from "convex/values";
-import type { Doc, Id } from "./_generated/dataModel";
-import { mutation, query, type QueryCtx } from "./_generated/server";
-import { requireUser } from "./lib/auth";
-import { canEditTool, canRemoveTool, validateToolInput } from "./lib/rules";
-import { notifyLoan } from "./notify";
-import { vCategory, vCondition } from "./schema";
+import type { Doc, Id } from "@/convex/_generated/dataModel";
+import { mutation, query, type QueryCtx } from "@/convex/_generated/server";
+import { requireUser } from "@/convex/lib/auth";
+import { canEditTool, canRemoveTool, validateToolInput } from "@/convex/lib/rules";
+import { notifyLoan } from "@/convex/notify";
+import { vCategory, vCondition } from "@/convex/schema";
 
 /**
  * Public, unauthenticated list of available tools.
