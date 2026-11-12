@@ -24,7 +24,7 @@ export function profileFromIdentity(
       ok: false,
       error:
         "Your sign-in token has no email claim. In the Clerk dashboard, open Sessions and add " +
-        '"email": "{{user.primary_email_address}}" to the session token (see SETUP.md).',
+        '"email": "{{user.primary_email_address}}" to the session token (see README.md).',
     };
   }
   const admins = (adminEmails ?? "").split(",").map((entry) => entry.trim().toLowerCase());

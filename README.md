@@ -17,12 +17,8 @@ common commands.
 - [n8n workflows](#n8n-workflows)
 - [Security and data minimization](#security-and-data-minimization)
 - [Reliability](#reliability)
-- [What I would change for production](#what-i-would-change-for-production)
 
 ## Run it locally
-
-**New to the stack? Follow [SETUP.md](SETUP.md).** It walks through every step, including the Clerk dashboard, the
-first-run prompts, and what each command prints. The short version:
 
 You need Node 26 (see `.node-version`), Bun 1.4, Docker Desktop, [`just`](https://github.com/casey/just) and `jq`,
 plus a free Clerk account.
@@ -102,7 +98,7 @@ No secret is in the code or the workflow JSON. Each value lives in exactly one o
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`                      | `.env.local`                           | Clerk sign-in.                                                                     |
 | `LENDLOOP_WEBHOOK_SECRET`                                                    | `.env.local`, Convex env, `n8n/.env`   | Shared HMAC secret for both directions. `just n8n-env` keeps all three in sync.    |
 | `CLERK_JWT_ISSUER_DOMAIN`                                                    | Convex env                             | Clerk Frontend API URL. Convex uses it to check sign-in tokens.                    |
-| `ADMIN_EMAILS`                                                               | Convex env                             | Comma-separated emails that get the admin role at sign-in.                         |
+| `ADMIN_EMAILS`                                                               | Convex env                             | Comma-separated emails that get the admin role when the user opens the app.        |
 | `N8N_WEBHOOK_URL`                                                            | Convex env                             | The n8n webhook for loan events.                                                   |
 | `N8N_ENCRYPTION_KEY`                                                         | `n8n/.env`                             | Encrypts the credentials stored in n8n. Generated once; back it up.                |
 | `CONVEX_SITE_URL`                                                            | `n8n/.env`                             | Where n8n reaches the Convex HTTP endpoints (`host.docker.internal:3211` locally). |
@@ -148,6 +144,16 @@ Where the main pieces live:
 | `n8n/workflows/`                                        | The three exported workflows.                                                        |
 | `components/dashboard/`                                 | Dashboard tabs: All tools, My listings, My requests, Incoming, and Admin.            |
 
+Why it has this shape:
+
+- **Convex pushes loan events to n8n; n8n doesn't poll.** A push is immediate and costs nothing when nothing
+  changes. The delivery is scheduled from inside the mutation, so it runs only after the loan change commits. A
+  failed email never rolls back a loan, and a rolled-back change never sends an email.
+- **n8n pulls the overdue list from Convex.** The schedule belongs to the automation, so n8n owns the daily trigger
+  and Convex only answers "which loans are overdue and not yet reminded today".
+- **Convex runs as a local deployment.** n8n runs in Docker on the same machine and must reach Convex, and Convex must
+  reach n8n. A cloud deployment can't call `localhost:5678`, so it would need a public n8n URL or a tunnel.
+
 ## Roles and permissions
 
 Convex enforces every rule on the server. The UI hides actions a user can't take, but the server would reject them
@@ -168,8 +174,9 @@ anyway.
 | Mark a lender Trusted                                                   | —          | —                                       | ✅                |
 
 Admins remove listings but can't edit them, so an admin can't change what a neighbor posted. Removing a listing
-declines its pending requests and notifies the borrowers. The role comes only from `ADMIN_EMAILS` on the server. It is
-checked again at every sign-in, so removing an email from the list demotes that admin the next time they sign in.
+declines its pending requests and notifies the borrowers. The role comes only from `ADMIN_EMAILS` on the server. The
+app recomputes it each time the user opens the app and stores it on the user's row, and admin actions check that
+stored role. Removing an email from the list therefore demotes that admin on their next visit, not at once.
 
 ## n8n workflows
 
@@ -217,7 +224,10 @@ internal, so a browser can't call them.
 - Error alerts name the failure but don't copy the payload.
 
 **Secrets.** The secrets live in the gitignored `.env.local` and `n8n/.env`, and in the Convex deployment's
-environment. The workflows read the HMAC secret from `$env`, so the exported JSON contains none.
+environment. The workflows read the HMAC secret from `$env`, so the exported JSON contains none. I chose `$env` over
+an n8n credential because the Code nodes that compute the HMAC can't read a credential, and because one command
+(`just n8n-env`) can then keep the secret identical in all three places. The trade-off: anyone who can edit a
+workflow can read `$env`, so only trusted operators should have editor access to n8n.
 `just check-secrets` fails if a secret value appears in any file git would commit, and `just n8n-export` runs it
 after every export.
 
@@ -234,24 +244,3 @@ after every export.
 
 The latest result for each loan appears under the loan in the UI ("Reminder sent 2 days ago", with the detail on
 hover), so a failed delivery is visible.
-
-## What I would change for production
-
-- **Email:** a real provider (Postmark, SES) with its key in an n8n credential, instead of Mailpit.
-- **n8n hosting:** TLS through a reverse proxy, secure cookies, Postgres instead of SQLite, and a backed-up
-  encryption key. External task runners to isolate Code nodes. Only operators can edit workflows, because any editor
-  can read `$env`.
-- **Secrets:** one secret for each direction, and support for two active secrets at a time so they can be rotated
-  without downtime.
-- **Replay:** the 5-minute window allows a replay inside it. Write-backs are idempotent, so a replay there is
-  harmless. A replayed notification could send a duplicate email, so n8n would store the `key` it receives and drop
-  repeats.
-- **Identity:** grant admin only when the email is verified (`email_verified` claim), and store the role in Clerk's
-  private metadata instead of an email list.
-- **Alerts:** send alerts to Slack or PagerDuty, and add an admin view that lists failed automations with a Retry
-  button.
-- **Scale:** queries cap results at 100 to 200 rows. Real data needs pagination and search, and the public list needs
-  rate limiting.
-- **Time zones:** "overdue" uses UTC dates. A real app would store each neighborhood's time zone.
-- **Tests and CI:** run `just check` and `bun run build` in CI. Add Convex function tests with `convex-test`, and
-  end-to-end tests of the sign-in and borrowing flow with Playwright and Clerk testing tokens.

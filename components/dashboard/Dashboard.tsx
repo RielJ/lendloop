@@ -19,7 +19,7 @@ export function Dashboard() {
       <p className="text-muted-foreground">
         You&apos;re signed in, but LendLoop couldn&apos;t verify your session. Check that the Convex
         integration is active in Clerk and that CLERK_JWT_ISSUER_DOMAIN matches your Clerk app (see
-        SETUP.md, Troubleshooting).
+        README.md, Run it locally).
       </p>
     );
   }
